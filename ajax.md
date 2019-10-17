@@ -6,7 +6,7 @@
 
 
 
-![1571138744998](C:\Users\子非鱼焉\AppData\Roaming\Typora\typora-user-images\1571138744998.png)
+![1571138744998](E:\培训文件夹\就业班\ajax\总结笔记\assets\1.png)
 
 * 域名：
   * 域名和IP地址一样，可以找到网络中的一台计算机
@@ -322,7 +322,182 @@ xhr.onreadystatechange=function(){
   </script>
   ```
 
-  
+  **ajax只可以提交字符串，现在可以提交二进制数**
 
-![formData](C:\Users\子非鱼焉\Desktop\formData.png)
 
+
+![formData](E:\培训文件夹\就业班\ajax\总结笔记\assets\formData.png)
+
+* jQuery使用formdata
+  * formData是一种特殊的数据类型，接收的form对象必须是**DOM对象**，而不是jQuery对象
+
+```js
+
+    var fm=$('form');
+    var formdata=new FormData(fm[0]);//此处将jQuery对象转为DOM对象
+    $.ajax({
+    	type:'POST',
+    	url:'',
+    	//data只能是字符串类型，传入{}时也会转为'name=xxx&age=xx'
+    	data:formdata,
+    	//此时是formData类型的需要做如下操作
+    	processData:false,//不让jQuery把formData对象转为字符串
+    	contentType:false,//不让jQuery去设置content-type，让FromData去处理
+    	success:function(res){
+            
+    	}
+})
+```
+
+* 参考链接
+
+  https://developer.mozilla.org/zh-CN/docs/Web/API/FormData/Using_FormData_Objects
+
+## ajax综合案例
+
+### 1.加载数据
+
+* 根据接口文档来写，具体参考接口文档
+* 功能实现的注意点
+  * 在获取到接口数据后渲染到页面上来是用到$('selector').append(jquer对象/str);
+    * append()可以接收一个jQuery对象也可以接收一个字符串，可以自动解析HTML
+
+### 2.懒加载
+
+* 确定加载的时机----在即将触底的时候
+  * 文档的高度-浏览器的高度-卷入的高度<100 为条件
+    * 涉及到的文档高度  $(document).height();
+    * 浏览器的高度  $(window).height();
+    * 卷入的高度(只能在scroll事件中才可以获取到)$(document).scrollTop();
+
+* jQuery中的height()方法
+
+  * height() 方法设置或返回被选元素的高度。
+
+  * 当该方法用于**返回**高度时， 则返回第一个匹配元素的高度。
+
+  * 当该方法用于**设置**高度时，则设置所有匹配元素的高度。
+
+  * 如下面的图像所示，该方法不包含 padding、border 或 margin。
+
+![height](E:\培训文件夹\就业班\ajax\总结笔记\assets\height.png)
+
+* 懒加载的问题
+
+  如果手抖的话，可能重复触发，重复加载数据，就是在正在加载的时候又触发加载
+
+  * 解决方法--开关思想
+    * 在开始加载的时候将开关关闭，在加载结束后再次打开开关
+    * 具体实现
+
+```js
+ function loadData() {
+        //在加载数据的开始置假
+        flag = false;
+        $.ajax({
+            type: 'GET',
+            url: '/member/list-page',
+            data: {
+                page: page,
+            },
+            dataType: 'json',
+            success: function (res) {
+                .....
+                //将数据成功渲染到页面后，表示加载结束了
+                $('#members').append(str);
+                //将开关打开
+                flag = true;
+            }
+        })
+    }
+    //判断的时候验证开关
+    if (documentHeight - windowHeight - scrollTop <= 100 && flag){
+        //加载数据
+    }
+    
+```
+
+### 3.删除功能
+
+删除功能首先是给  删除  加上点击事件，点击删除，由于是后来动态添加的元素，所以用到了事件委托，其次是要在数据库删除，也要在DOM树上删除
+
+* 事件委托实现点击事件
+
+  $('body').on('事件名称','委托的元素'，function(){})
+
+  * 委托的元素传入的是一个选择器
+
+* 调用删除接口删除接口的数据，传入删除的id，
+  * 前提是当前元素上有id这个属性，所以要添加一个自定义属性的id,以便获取
+  * 获取自定义属性$('selector').attr('自定义属性');
+
+* 接口数据的数据删除成功后，删除DOM树上节点
+  * jQuery对象.remove();
+  * 注意问题
+    * 在success中this的指向会改变，注意这个问题
+
+### 4.查看详情功能
+
+查看详情首先是给 view  加上一个点击事件，点击跳转detial页面，获取详细信息的接口中要求的请求参数是id，所以在跳转的时候需要携带一个id参数，
+
+**a标签的跳转就是根据href中的url进行跳转，  是get请求方式，可以将id拼接在地址中**
+
+* 具体方法  将id拼接在地址中
+
+```html
+<a href="detail.html?id=${item.id}" class="card-link">View</a>
+```
+
+* 跳转后获取id信息
+  * location.search  获取地址栏的参数  --->"?id=123"
+  * 字符串截取方法  substr/replace
+
+```js
+//substr方法
+stringObject.substr(start,[length])//包前不包后  返回截取的字符串
+location.search.substr(4);
+
+//replce方法
+stringObject.replace(regexp/substr,replacement)//返回替换后的字符串
+location.replace(/^\D/g,'');//将非数字的字符替换为空  
+```
+
+* 注意问题：
+  * **一定要注意返回的数据的格式，决定怎样进行渲染，不要思维固化**
+
+### 5.添加会员
+
+添加会员  也是 在点击之后跳转到add.html 页面，然后，上传图片，文本等表单控件的值
+
+* 预览图片
+
+给file表单控件添加一个change事件，此事件在选择文件发生变化时触发执行，需要得到一个临时地址 进行图片预览
+
+* 获取临时地址的具体做法
+
+```
+var file=this.files[0]//DOMfile文件对象通过DOM对象的files属性获取，
+//临时地址url的获取
+var url=URL.createObjectURL(file);//传入一个文件对象
+
+```
+
+* 表单控件的属性介绍
+
+  input:file 标签属性介绍
+
+  - accept：限制上传文件的文件类型
+    - accept=".jpg,.png,.gif"       一个一个后缀指定
+    - accept="image/*"    表示允许任何的图片类型
+  - multiple：多选
+
+* 提交给接口 使用FormData
+
+  * input的name属性必须和接口中要求的参数名称一致
+
+  * 注意使用formData作为数据传递给接口，必须设置一下两个属性
+    * processData:false;
+    * contentType:false;
+
+* 上传到接口数据成功后跳转到index页面，index页面上来就加载数据，会展示新添加的数据
+  * 阻止a标签的默认跳转行为，e.preventDefault();
