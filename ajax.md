@@ -500,4 +500,157 @@ var url=URL.createObjectURL(file);//传入一个文件对象
     * contentType:false;
 
 * 上传到接口数据成功后跳转到index页面，index页面上来就加载数据，会展示新添加的数据
+
   * 阻止a标签的默认跳转行为，e.preventDefault();
+
+## Ajax补充
+
+> Ajax就是Asynchronous Javascript And XML(异步的javascript和XML)
+>
+> 是一种通过js代码完成客户端和服务器交互的技术
+
+## jQuery中的ajax补充
+
+* $.ajax({})
+* $.get('url',[data],[fn],[dataType])
+* $.post('url',[data],[fn],[dataType])
+
+**其中请求参数data可以是对象，可以是字符串的写法**
+
+##  其他的封装库anxios
+
+中文网站：<http://www.axios-js.com/zh-cn/docs/
+
+```js
+// 获取服务器的返回值
+axios.get('/common/get?id=123').then(function(res) {
+    // res 就是本次请求的信息
+    console.info(res);
+    // 获取 从服务器返回的数据
+    console.info(res.data);
+});
+
+axios.get('/common/get', { params: { id: 123, name: 'jake' } }).then(function(res) {
+    // res 就是本次请求的信息
+    console.info(res);
+    // 获取 从服务器返回的数据
+    console.info(res.data);
+});
+
+// post请求，不带参数
+axios.post('/common/post').then(function(res) {
+    console.info(res.data);
+});
+// post请求，带参数
+axios.post('/common/post', { id: 123, name: 'jake' }).then(function(res) {
+    console.info(res.data);
+});
+```
+
+## 模板引擎
+
+> 客户端中拿到请求数据后最常见的就是把这些数据呈现在页面上，
+>
+> 如果数据结构接单，可以直接通过字符串操作（拼接）的方式，但是数据过于复杂，字符串拼接维护的成本太大
+>
+> 模板引擎其实就是一个API，模板引擎有很多种，使用方式大同小异，目的是为了更容易更高效的将数据渲染到HML字符串中。将HTML和js整合在一起
+
+### 使用模板引擎的步骤
+
+* 1.准备一个存放数据的盒子(不是必须的，使用body也可以)；
+* 2.引入template-web.js 文件
+* 3.定义模板，一定要指定script的type属性  
+* 4.调用template函数，为末班分配数据，
+  * template(模板的id,分配的数据)//分配的数据必须是js对象形式
+  * template的返回值是数据和模版组合好的结果
+
+```js
+//引入文件
+<script src="./assets/template-web.js"></script>
+//模板
+<script type="text/html" id="test">
+        <h2>{{title}}</h2>
+        <p>{{age}}</p>
+        <ul>
+            <li>{{heroes[0]}}</li>
+            <li>{{heroes[1]}}</li>
+            <li>{{heroes[2]}}</li>
+    </ul>
+</script>
+
+<script>
+    // 下面的数据是模拟的，相当于ajax请求之后，服务器返回的数据
+    var data = {
+        title: '模板引擎练习',
+        age: 20,
+        heroes: ['曹操', '刘备', '李逵', '张飞']
+    };
+    // 调用template函数
+    /*
+        var str = template(模板的id, 数据); // 数据必须是JS对象格式
+        */
+    var str = template('test', data);
+    console.log(str);
+</script>
+
+```
+
+### 模板字符串的语法
+
+* 输出普通的数据  {{}}
+* 条件判断
+
+```js
+{{if age>18}}
+//大于18要显示的内容
+{{else}}
+//小于等于18要显示的内容
+{{/if}}
+```
+
+* 循环
+
+```js
+{{each 遍历的数组}}
+	{{$index}}//$index 是当前遍历项的下标
+	{{$value}}//$value 是当前遍历的值
+{{/each}}
+```
+
+### 案例中具体用法示例
+
+```js
+<script src="./assets/template-web.js"></script>
+
+<script type="text/html" id="li">
+  {{each msg}}
+  <li>
+      <div class="info"><img src="images/03.jpg"><span>{{$value.name}}</span>
+        <p>发布于：{{$value.created}}</p>
+      </div>
+      <div class="content">{{$value.content}}</div>
+    </li>
+    {{/each}}
+</script>
+
+
+<script>
+  //模板引擎：可以将分开的HTML和js整合在一起的一个库
+  $.get('/message/getMsg',function(res){
+    var str='';
+    res.forEach(element=>{
+      // console.log(res);
+        //传入的必须是一个对象，所以要用花括号包裹
+      str=template('li',{
+        msg:res
+      });
+      
+    });
+    console.log(str);
+    
+    $('ul').html(str);
+  },'json')
+</script>
+
+```
+
